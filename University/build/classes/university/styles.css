@@ -1,0 +1,57 @@
+/* styles.css */
+.root {
+    -fx-background-color: #9EC8B9; /* Set your desired background color for the entire application */
+    -fx-background-image: url("../images/image4.jpg"); /* Set your background image path */
+    -fx-background-size: cover; /* Adjust the size of the background image */
+}
+
+.label {
+    -fx-font-size: 17px;
+    -fx-text-fill: white; /* Set your desired text color for labels */
+}
+
+.text-field {
+    -fx-font-size: 15px;
+    -fx-background-color: #F6F1EE; /* Set your desired background color for text fields */
+}
+
+.button {
+    -fx-font-size: 15px;
+    -fx-background-color: #1B4242; /* Set your desired background color for buttons */
+    -fx-text-fill: white; /* Set your desired text color for buttons */
+}
+
+/* styles.css */
+.table-view {
+    -fx-background-color: #ffffff; /* Set your desired background color for the table view */
+}
+
+.table-cell {
+    -fx-font-size: 14px;
+    -fx-text-fill: #333333; /* Set your desired text color for table cells */
+}
+
+.table-header {
+    -fx-font-size: 14px;
+    -fx-background-color: #f0f0f0; /* Set your desired background color for table header */
+}
+
+.alert-dialog-pane {
+    -fx-background-color: #9EC8B9; /* Set your desired background color for the alert */
+}
+
+.alert-label {
+    -fx-font-size: 16px;
+    -fx-text-fill: #1B4242; /* Set your desired text color for alert labels */
+}
+
+.alert-text-field {
+    -fx-font-size: 15px;
+    -fx-background-color: #F6F1EE; /* Set your desired background color for alert text fields */
+}
+
+.alert-button {
+    -fx-font-size: 14px;
+    -fx-background-color: #1B4242; /* Set your desired background color for alert buttons */
+    -fx-text-fill: white; /* Set your desired text color for alert buttons */
+}

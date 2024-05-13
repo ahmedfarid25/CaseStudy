@@ -1,0 +1,40 @@
+CREATE TABLE Departments
+(
+  Department_ID INT NOT NULL,
+  Department_Name VARCHAR2(200) NOT NULL,
+  PRIMARY KEY (Department_ID)
+);
+
+CREATE TABLE Students
+(
+  Student_ID INT NOT NULL,
+  Fname VARCHAR2(200) NOT NULL,
+  Lname VARCHAR2(200) NOT NULL,
+  Department_ID INT NOT NULL,
+  Email VARCHAR2(200) NOT NULL,
+  Phone VARCHAR2(20) NOT NULL,
+  PRIMARY KEY (Student_ID),
+  FOREIGN KEY (Department_ID) REFERENCES Departments(Department_ID)
+);
+
+CREATE TABLE Courses
+(
+  Course_ID INT NOT NULL,
+  Course_name VARCHAR2(200) NOT NULL,
+  Department_ID INT NOT NULL,
+  COURSE_DEGREE  NUMBER DEFAULT 150,
+  SEMESTERS VARCHAR2(20 BYTE),
+  PRIMARY KEY (Course_ID),
+  FOREIGN KEY (Department_ID) REFERENCES Departments(Department_ID)
+);
+
+CREATE TABLE Grades
+(
+ 
+  Student_ID INT NOT NULL,
+  Course_ID INT NOT NULL,
+  Scores NUMBER NOT NULL,
+  PRIMARY KEY (Student_ID, Course_ID),
+  FOREIGN KEY (Student_ID) REFERENCES Students(Student_ID),
+  FOREIGN KEY (Course_ID) REFERENCES Courses(Course_ID)
+);

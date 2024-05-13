@@ -1,0 +1,12 @@
+/* styles.css */
+.root {
+    -fx-background-color: #9EC8B9; /* Set your desired background color for the entire application */
+    -fx-background-image: url("../images/image9.jpg"); /* Set your background image path */
+    -fx-background-size: cover; /* Adjust the size of the background image */
+}
+
+.button {
+    -fx-font-size: 17px;
+    -fx-background-color: #1B4242; /* Set your desired background color for buttons */
+    -fx-text-fill: white; /* Set your desired text color for buttons */
+}

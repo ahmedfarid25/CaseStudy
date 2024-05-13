@@ -1,0 +1,232 @@
+CREATE OR REPLACE PROCEDURE UpdateStudentInformation(
+    p_Table_Name IN VARCHAR2,
+    p_ID IN NUMBER,
+    p_New_Fname IN VARCHAR2 DEFAULT NULL,
+    p_New_Lname IN VARCHAR2 DEFAULT NULL,
+    p_New_Department_ID IN NUMBER DEFAULT NULL,
+    p_New_Course_Name IN VARCHAR2 DEFAULT NULL,
+    p_New_Score IN NUMBER DEFAULT NULL,
+    p_New_Course_ID IN NUMBER DEFAULT NULL  -- Add the missing parameter
+) AS
+BEGIN
+    CASE p_Table_Name
+        WHEN 'Students' THEN
+            UPDATE Students
+            SET Fname = COALESCE(p_New_Fname, Fname),
+                Lname = COALESCE(p_New_Lname, Lname),
+                Department_ID = COALESCE(p_New_Department_ID, Department_ID)
+            WHERE Student_ID = p_ID;
+
+        WHEN 'Courses' THEN
+            UPDATE Courses
+            SET Course_Name = COALESCE(p_New_Course_Name, Course_Name),
+                Department_ID = COALESCE(p_New_Department_ID, Department_ID)
+            WHERE Course_ID = p_ID;
+
+        WHEN 'Grades' THEN
+            UPDATE Grades
+            SET Scores= COALESCE(p_New_Score, Scores)
+            WHERE Student_ID = p_ID AND Course_ID = COALESCE(p_New_Course_ID, Course_ID); -- Include Course_ID condition
+
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('Invalid table name');
+    END CASE;
+
+  
+END;
+
+--------------------------------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION CalculateGPA(p_Student_ID IN NUMBER) RETURN NUMBER IS
+    v_TotalGPA NUMBER := 0;
+    v_TotalCourses NUMBER := 0;
+    v_CoursePercentage NUMBER;
+BEGIN
+    FOR course_rec IN (
+        SELECT G.Scores, C.Course_Degree
+        FROM Grades G
+        JOIN Courses C ON G.Course_ID = C.Course_ID
+        WHERE G.Student_ID = p_Student_ID
+    ) LOOP
+        
+        v_CoursePercentage := (course_rec.Scores / course_rec.Course_Degree) * 100;
+
+        v_TotalGPA := v_TotalGPA + (v_CoursePercentage / 25);
+        v_TotalCourses := v_TotalCourses + 1;
+    END LOOP;
+
+    -- Calculate GPA
+    IF v_TotalCourses > 0 THEN
+        RETURN ROUND(v_TotalGPA / v_TotalCourses, 2);
+    ELSE
+        RETURN NULL; -- Avoid division by zero
+    END IF;
+    
+    EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Student with ID ' || p_Student_ID || ' not found.');
+        RETURN NULL;
+    WHEN OTHERS THEN
+        
+        DBMS_OUTPUT.PUT_LINE('An error occurred.');
+        RETURN NULL;
+END;
+
+
+
+set serveroutput on
+DECLARE
+    v_GPA NUMBER;
+BEGIN
+    v_GPA := CalculateGPA(1);
+    DBMS_OUTPUT.PUT_LINE('GPA for The Student: '|| TO_CHAR(v_GPA));
+END;
+
+---------------------------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION CalculateCourseGPA(p_Course_ID IN NUMBER) 
+RETURN NUMBER IS
+
+    v_TotalGPA NUMBER := 0;
+    v_TotalStudents NUMBER := 0;
+    v_CoursePercentage NUMBER;
+    v_MaxCourseDegree NUMBER := 150;
+
+BEGIN
+    FOR course_rec IN (
+        SELECT G.Scores, C.Course_Degree
+        FROM Grades G
+        JOIN Courses C ON G.Course_ID = C.Course_ID
+        WHERE G.Course_ID = p_Course_ID
+    ) LOOP
+                
+        v_CoursePercentage := (course_rec.Scores / v_MaxCourseDegree) *100;
+
+        -- Update total GPA
+        v_TotalGPA := v_TotalGPA + (v_CoursePercentage /25);
+        v_TotalStudents := v_TotalStudents + 1;
+    END LOOP;
+
+    -- Calculate average GPA for the course
+    IF v_TotalStudents > 0 THEN
+        RETURN ROUND(v_TotalGPA / v_TotalStudents, 2);
+    ELSE
+        RETURN NULL; -- Avoid division by zero
+    END IF;
+    
+    EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Course with ID ' || p_Course_ID || ' not found.');
+        RETURN NULL;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An error occurred.');
+        RETURN NULL;
+
+END;
+---------------------------------------------------------------------------------------------------
+CREATE SEQUENCE UNIVERSITY.STUDENTS_SEQ
+  START WITH 32
+  MAXVALUE 9999999999999999999999999999
+  MINVALUE 1
+  NOCYCLE
+  CACHE 20
+  NOORDER;
+---------------------------------------------------------------------------------------------------
+DROP SEQUENCE UNIVERSITY.COURSES_SEQ;
+
+CREATE SEQUENCE UNIVERSITY.COURSES_SEQ
+  START WITH 152
+  MAXVALUE 9999999999999999999999999999
+  MINVALUE 1
+  NOCYCLE
+  CACHE 20
+  NOORDER;
+---------------------------------------------------------------------------------------------------
+CREATE SEQUENCE UNIVERSITY.DEPARTMENTS_SEQ
+  START WITH 27
+  MAXVALUE 9999999999999999999999999999
+  MINVALUE 1
+  NOCYCLE
+  CACHE 20
+  NOORDER;
+---------------------------------------------------------------------------------------------------
+CREATE SEQUENCE UNIVERSITY.GRADES_SEQ
+  START WITH 32
+  MAXVALUE 9999999999999999999999999999
+  MINVALUE 1
+  NOCYCLE
+  CACHE 20
+  NOORDER;
+--------------------------------------------------------------------------------------------------
+CREATE OR REPLACE TRIGGER UNIVERSITY.STUDENTS_TRG
+                            BEFORE INSERT ON UNIVERSITY.STUDENTS                             FOR EACH ROW
+BEGIN
+                                :NEW.STUDENT_ID := STUDENTS_SEQ.NEXTVAL;
+                            END;
+-----------------------------------------------------------------------------------------------
+CREATE OR REPLACE TRIGGER UNIVERSITY.COURSES_TRG
+                            BEFORE INSERT ON UNIVERSITY.COURSES                             FOR EACH ROW
+BEGIN
+                                :NEW.COURSE_ID := COURSES_SEQ.NEXTVAL;
+                            END;
+-------------------------------------------------------------------------------------------------
+CREATE OR REPLACE TRIGGER UNIVERSITY.DEPARTMENTS_TRG
+                            BEFORE INSERT ON UNIVERSITY.DEPARTMENTS                             FOR EACH ROW
+BEGIN
+                                :NEW.DEPARTMENT_ID := DEPARTMENTS_SEQ.NEXTVAL;
+                            END;
+---------------------------------------------------------------------------------------------------
+CREATE OR REPLACE TRIGGER UNIVERSITY.GRADES_TRG
+                            BEFORE INSERT ON UNIVERSITY.GRADES                             FOR EACH ROW
+BEGIN
+                                :NEW.STUDENT_ID := GRADES_SEQ.NEXTVAL;
+                            END;
+------------------------------------------------------------------------------------------------------
+CREATE OR REPLACE TRIGGER UpdateGrade
+BEFORE INSERT OR UPDATE ON Grades
+FOR EACH ROW
+BEGIN
+    
+    :new.Grades := CASE
+                      WHEN :new.Scores > 0.75 * 150 THEN 'A'
+                      WHEN :new.Scores >= 0.65 * 150 AND :new.Scores < 0.75 * 150 THEN 'B'
+                      ELSE 'C'
+                   END;
+END;
+-------------------------------------------------------------------------------------------
+CREATE OR REPLACE TRIGGER insert_student_grades
+AFTER INSERT ON students
+FOR EACH ROW
+DECLARE
+BEGIN
+    -- Insert the student into the GRADES table with department courses
+    FOR course_rec IN (SELECT course_id FROM courses WHERE department_id = :NEW.department_id)
+    LOOP
+        INSERT INTO grades (student_id, course_id, scores)
+        VALUES (:NEW.student_id, course_rec.course_id, NULL);
+    END LOOP;
+END;
+------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE TRIGGER delete_student_grades
+AFTER DELETE ON UNIVERSITY.STUDENTS
+FOR EACH ROW
+BEGIN
+    DELETE FROM UNIVERSITY.GRADES
+    WHERE STUDENT_ID = :OLD.STUDENT_ID;
+END;
+
+-------------------------------------------------------------------------------------------------------------------
+--REPORT
+
+SELECT
+    C.Course_ID,
+    C.Course_Name,
+    CalculateCourseGPA(C.Course_ID) AS Course_GPA,
+    LISTAGG(s.student_id, ', ') WITHIN GROUP (ORDER BY s.student_id) AS "Students ID"
+FROM
+    Courses C
+JOIN
+    Grades G ON C.Course_ID = G.Course_ID
+JOIN
+    Students S ON G.Student_ID = S.Student_ID
+GROUP BY
+    C.Course_ID, C.Course_Name;
